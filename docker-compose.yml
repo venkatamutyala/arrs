@@ -1,0 +1,105 @@
+version: "3"
+
+services:
+  transmission:
+    image: ghcr.io/linuxserver/transmission
+    container_name: transmission
+    restart: unless-stopped
+    ports:
+      - "35240:35240"
+      - "9091:9091"
+    networks:
+      medianet:
+        ipv4_address: 10.5.0.2
+    environment:
+      - PGID=1000
+      - PUID=1000
+    volumes:
+      - ./transmission:/config
+      - ./downloads:/downloads
+      - /etc/localtime:/etc/localtime:ro
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    ports:
+      - "7878:7878"
+    networks:
+      medianet:
+        ipv4_address: 10.5.0.3
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - ./radarr:/config
+      - ./downloads:/downloads
+      - ./movies:/movies
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    networks:
+      medianet:
+        ipv4_address: 10.5.0.4
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - ./sonarr:/config
+      - ./tv:/tv
+      - ./downloads:/downloads
+  mediaserver:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    restart: unless-stopped
+    networks:
+      medianet:
+        ipv4_address: 10.5.0.9
+    ports:
+      - 8096:8096
+    volumes:
+      - ./jellyfin/jellyfin-config:/config
+      - ./jellyfin/jellyfin-cache:/cache
+      - ./movies:/media/movies:ro
+      - ./kids_movies:/media/kids_movies:ro
+      - ./tv:/media/tv:ro
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - ./prowlarr/data:/config
+    ports:
+      - 9696:9696
+    networks:
+      medianet:
+        ipv4_address: 10.5.0.11
+    restart: unless-stopped
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=America/Denver
+    ports:
+       - 5055:5055
+    volumes:
+       - ./jellyseerr/config:/app/config
+    networks:
+      medianet:
+        ipv4_address: 10.5.0.13
+    restart: unless-stopped
+networks:
+  medianet:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.5.0.0/26
+
